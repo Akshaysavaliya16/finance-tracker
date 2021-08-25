@@ -4,12 +4,45 @@ class FriendController < ApplicationController
     @firends = current_user.friends
   end
 
+  def create
+    friend = User.find(params[:friend])
+    current_user.friendships.build(friend_id: friend.id)
+    if current_user.save
+      flash[:notice] = "Following user"
+    else
+      flash[:alert] = "There was something wrong with the tracking request."
+    end
+    redirect_to friends_path
+  end
+
+  def search_friend
+    if params[:friend].present?
+      @friends = User.search(params[:friend])
+      @friends = current_user.except_current_user(@friends)
+      if @friends
+        respond_to do |format|
+          format.js { render partial: 'friend/friend_result'}
+        end
+      else
+        respond_to do |format|
+          flash.now[:alert] = "Please enter a valid name to search"
+          format.js { render partial: 'friend/friend_result'}
+        end 
+      end
+    else 
+      respond_to do |format|
+        flash.now[:alert] = "Please enter a name to search"
+        format.js { render partial: 'friend/friend_result'}
+      end 
+    end
+    #render json: params#params[:friend]
+  end
+
   def destroy
-    user = User.find(params[:id])
-    friendships = Friendship.where(user_id: current_user.id, friend_id: user.id).first
+    friendships = current_user.friendships.where(friend_id: params[:id]).first
     friendships.destroy
-    flash[:notice] = "#{user.full_name} was successfully removed from your friend list."
-    redirect_to friendships_path
+    flash[:notice] = "Stop following."
+    redirect_to friends_path
   end
 
 end

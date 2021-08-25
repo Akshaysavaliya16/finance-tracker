@@ -28,4 +28,37 @@ class User < ApplicationRecord
     return "#{first_name} #{last_name}" if first_name || last_name
     "Anonymous"
   end
+
+  def self.search(param)
+    param.strip! #removed spaces between prefix and postfix
+    to_send_back = (first_name_matches(param) + last_name_matches(param) + email_matches(param)).uniq
+    return nil unless to_send_back
+    to_send_back
+  end
+
+  def self.first_name_matches(param)
+    search_friend("first_name", param)
+  end
+
+  def self.last_name_matches(param)
+    search_friend("last_name", param)
+  end
+
+  def self.email_matches(param)
+    search_friend("email", param)
+  end
+
+  def self.search_friend(field_name, param)
+    where("#{field_name} like ?", "%#{param}%")
+    #new(first_name: "Akshay", last_name: "Savaliya", email: "Akshay@gmail.com")
+  end
+
+  def except_current_user(users)
+    users.reject { |user| user.id == self.id}
+  end
+
+  def not_friends_with?(id_of_friend)
+    !friends.where(id: id_of_friend).exists?
+  end
+
 end
